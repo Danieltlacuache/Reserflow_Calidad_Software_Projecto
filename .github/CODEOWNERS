@@ -1,0 +1,9 @@
+# Todos los archivos requieren revisión de ambos miembros del equipo
+* @Danieltlacuache @LeonCarloRivera
+
+# Módulos de negocio críticos
+src/modules/reservations/ @Danieltlacuache @LeonCarloRivera
+src/modules/inventory/ @Danieltlacuache @LeonCarloRivera
+
+# Pipeline CI/CD
+.github/workflows/ @Danieltlacuache @LeonCarloRivera
