@@ -1,0 +1,71 @@
+name: CI Pipeline — ReservFlow
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+jobs:
+  quality:
+    name: Lint, Build, Test & Coverage
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Linting (ESLint)
+        run: npm run lint
+
+      - name: Compilación (TypeScript)
+        run: npm run build
+
+      - name: Pruebas + Cobertura
+        run: npm run test:coverage
+
+  sonarqube:
+    name: Análisis SonarQube
+    runs-on: self-hosted
+    needs: quality
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Ejecutar pruebas (generar lcov)
+        run: npm run test:coverage
+
+      - name: Run Sonar Scanner
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        shell: cmd
+        run: |
+          sonar-scanner ^
+            -Dsonar.projectKey=reservflow ^
+            -Dsonar.projectName=ReservFlow ^
+            -Dsonar.sources=src ^
+            -Dsonar.tests=src ^
+            -Dsonar.test.inclusions=**/*.test.ts,**/*.spec.ts ^
+            -Dsonar.exclusions=**/node_modules/**,**/.next/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/database/**,**/docs/** ^
+            -Dsonar.typescript.lcov.reportPaths=coverage/lcov.info ^
+            -Dsonar.host.url=http://localhost:9000 ^
+            -Dsonar.token=%SONAR_TOKEN%
