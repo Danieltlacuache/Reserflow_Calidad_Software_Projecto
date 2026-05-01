@@ -1,0 +1,290 @@
+openapi: '3.0.3'
+info:
+  title: ReservFlow API
+  description: API REST para el sistema de reservaciones de hotel ReservFlow (ApexReservations).
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Servidor de desarrollo local
+
+paths:
+  /api/reservations:
+    post:
+      summary: Crear reservación
+      operationId: createReservation
+      tags: [Reservaciones]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReservationRequest'
+      responses:
+        '201':
+          description: Reservación creada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Reservation'
+        '400':
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+    get:
+      summary: Listar reservaciones
+      operationId: listReservations
+      tags: [Reservaciones]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [Pendiente, Confirmada, Cancelada, Completada]
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: roomId
+          in: query
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Lista de reservaciones
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Reservation'
+
+  /api/reservations/{id}:
+    get:
+      summary: Obtener reservación por ID
+      operationId: getReservationById
+      tags: [Reservaciones]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Reservación encontrada
+        '404':
+          description: No encontrada
+    patch:
+      summary: Actualizar estado
+      operationId: updateReservationStatus
+      tags: [Reservaciones]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateStatusRequest'
+      responses:
+        '200':
+          description: Estado actualizado
+        '422':
+          description: Transición no permitida
+    delete:
+      summary: Cancelar reservación
+      operationId: cancelReservation
+      tags: [Reservaciones]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Reservación cancelada
+        '404':
+          description: No encontrada
+
+  /api/rooms/availability:
+    get:
+      summary: Consultar disponibilidad
+      operationId: getRoomAvailability
+      tags: [Disponibilidad]
+      parameters:
+        - name: roomType
+          in: query
+          schema:
+            type: string
+            enum: [single, double, suite, deluxe]
+        - name: checkIn
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: checkOut
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Disponibilidad consultada
+
+  /api/admin/dashboard:
+    get:
+      summary: Dashboard administrativo
+      operationId: getDashboardData
+      tags: [Administración]
+      responses:
+        '200':
+          description: Datos del dashboard
+
+components:
+  schemas:
+    CreateReservationRequest:
+      type: object
+      required: [roomId, checkIn, checkOut, guestData, roomType]
+      properties:
+        roomId:
+          type: string
+          format: uuid
+        checkIn:
+          type: string
+          format: date-time
+        checkOut:
+          type: string
+          format: date-time
+        guestData:
+          type: object
+          required: [name, email, phone]
+          properties:
+            name:
+              type: string
+              minLength: 1
+              maxLength: 200
+            email:
+              type: string
+              format: email
+            phone:
+              type: string
+              minLength: 7
+              maxLength: 20
+        roomType:
+          type: string
+          enum: [single, double, suite, deluxe]
+
+    UpdateStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [Confirmada, Cancelada, Completada]
+
+    Reservation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        roomId:
+          type: string
+          format: uuid
+        checkIn:
+          type: string
+          format: date-time
+        checkOut:
+          type: string
+          format: date-time
+        guestId:
+          type: string
+          format: uuid
+        roomType:
+          type: string
+          enum: [single, double, suite, deluxe]
+        status:
+          type: string
+          enum: [Pendiente, Confirmada, Cancelada, Completada]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    RoomAvailability:
+      type: object
+      properties:
+        roomType:
+          type: string
+          enum: [single, double, suite, deluxe]
+        date:
+          type: string
+          format: date
+        availableCount:
+          type: integer
+          minimum: 0
+
+    DashboardData:
+      type: object
+      properties:
+        reservations:
+          type: object
+          properties:
+            activeCount:
+              type: integer
+            completedCount:
+              type: integer
+            cancelledCount:
+              type: integer
+        occupancy:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoomAvailability'
+
+    ApiError:
+      type: object
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  message:
+                    type: string
