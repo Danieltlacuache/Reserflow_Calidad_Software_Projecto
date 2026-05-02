@@ -3,11 +3,11 @@
 import { z } from 'zod';
 
 const EnvSchema = z.object({
-  DATABASE_URL: z.string().url(),
-  DATABASE_READ_URL: z.string().url().optional(),
-  REDIS_URL: z.string().url(),
-  MOCK_AIRBNB_URL: z.string().url(),
-  MOCK_BOOKING_URL: z.string().url(),
+  DATABASE_URL: z.string().min(1),
+  DATABASE_READ_URL: z.string().min(1).optional(),
+  REDIS_URL: z.string().min(1),
+  MOCK_AIRBNB_URL: z.string().min(1),
+  MOCK_BOOKING_URL: z.string().min(1),
   MOCK_TIMEOUT_MS: z.coerce.number().default(5000),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 });
