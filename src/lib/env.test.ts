@@ -36,7 +36,8 @@ describe('validateEnv', () => {
   });
 
   it('throws when DATABASE_URL is missing', async () => {
-    const { DATABASE_URL: _, ...envWithout } = validEnv;
+    const envWithout = { ...validEnv };
+    delete (envWithout as Record<string, string | undefined>).DATABASE_URL;
     Object.assign(process.env, envWithout);
     // Make sure DATABASE_URL is not set
     delete process.env.DATABASE_URL;
@@ -45,7 +46,8 @@ describe('validateEnv', () => {
   });
 
   it('throws when REDIS_URL is missing', async () => {
-    const { REDIS_URL: _, ...envWithout } = validEnv;
+    const envWithout = { ...validEnv };
+    delete (envWithout as Record<string, string | undefined>).REDIS_URL;
     Object.assign(process.env, envWithout);
     delete process.env.REDIS_URL;
     const { validateEnv } = await import('@/lib/env');

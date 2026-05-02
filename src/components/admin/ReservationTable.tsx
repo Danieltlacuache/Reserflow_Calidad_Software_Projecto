@@ -27,11 +27,7 @@ export default function ReservationTable() {
   const [error, setError] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
-  useEffect(() => {
-    fetchReservations();
-  }, [statusFilter]);
-
-  const fetchReservations = async () => {
+  const fetchReservations = React.useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -49,7 +45,11 @@ export default function ReservationTable() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter]);
+
+  useEffect(() => {
+    fetchReservations();
+  }, [fetchReservations]);
 
   return (
     <div className="space-y-4">
