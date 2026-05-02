@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 15 (simula Amazon Aurora)
+  postgres:
+    image: postgres:15
+    container_name: reservflow-pg
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_DB: reservflow
+      POSTGRES_USER: reservflow_user
+      POSTGRES_PASSWORD: reservflow_pass
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ../database/migrations/001_create_rooms.sql:/docker-entrypoint-initdb.d/01_rooms.sql
+      - ../database/migrations/002_create_guests.sql:/docker-entrypoint-initdb.d/02_guests.sql
+      - ../database/migrations/003_create_reservations.sql:/docker-entrypoint-initdb.d/03_reservations.sql
+      - ../database/migrations/004_create_indexes.sql:/docker-entrypoint-initdb.d/04_indexes.sql
+      - ../database/seeds/seed_rooms.sql:/docker-entrypoint-initdb.d/05_seed.sql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U reservflow_user -d reservflow']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis 7 (simula Amazon ElastiCache)
+  redis:
+    image: redis:7-alpine
+    container_name: reservflow-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pg_data:
+  redis_data:
